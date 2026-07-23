@@ -1,4 +1,5 @@
 require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
@@ -13,26 +14,40 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Controlled Local Development CORS Configuration
-// Allows local Flutter Web dev servers (localhost / 127.0.0.1 on any port) and Android Emulators (10.0.2.2)
+// CORS Configuration
+// Allows local development and deployed Netlify frontend
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile native apps, Postman, curl)
-      if (!origin) return callback(null, true);
+      // Allow requests with no origin
+      // Examples: Android app, Postman, curl
+      if (!origin) {
+        return callback(null, true);
+      }
 
-      const isLocalhost =
+      // Production frontend
+      const allowedProductionOrigins = [
+        'https://tasksphere-manager.netlify.app',
+      ];
+
+      // Local development
+      const isLocalDevelopment =
         origin.startsWith('http://localhost') ||
         origin.startsWith('http://127.0.0.1') ||
         origin.startsWith('http://10.0.2.2');
 
-      if (isLocalhost) {
+      const isProductionFrontend =
+        allowedProductionOrigins.includes(origin);
+
+      if (isLocalDevelopment || isProductionFrontend) {
         return callback(null, true);
       }
 
-      // Reject unauthorized origins in non-development environments
-      return callback(new Error('CORS policy check failed: Origin not allowed.'));
+      return callback(
+        new Error('CORS policy check failed: Origin not allowed.')
+      );
     },
+
     credentials: true,
   })
 );
